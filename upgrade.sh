@@ -2,7 +2,7 @@
 set -e
 
 ENVIRONMENT=$1
-NAMESPACE="smartness"
+NAMESPACE="common"
 NAME=$(cat package.json | jq -r '.name')
 TAG=$(cat package.json | jq -r '.version')
 
