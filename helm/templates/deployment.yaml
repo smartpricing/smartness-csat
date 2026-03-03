@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: {{ .Release.Name }}
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      run: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        run: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ .Release.Name }}
+        np.egress.postgres: 'true'
+        np.ingress.api-gateway: 'true'
+        np.egress.api-gateway: 'true'
+      namespace: {{ .Release.Namespace }}
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              run: {{ .Release.Name }}
+      containers:
+        - name: {{ .Release.Name }}
+          imagePullPolicy: Always
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          ports:
+            - containerPort: {{ .Values.port }}
+          resources: {{- toYaml .Values.resources | trim | nindent 12 }}
+          command: ['pnpm', 'start']
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 3            
+          livenessProbe:
+            httpGet:
+              path: /health/check
+              port: {{ .Values.port }}
+            failureThreshold: 10
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          envFrom:
+            - secretRef:
+                name: postgres-smartpricing-{{ .Values.env }}
+            - secretRef:
+                name: alloy
+            - secretRef:
+                name: api-gateway-{{ .Values.env }}
+          env:
+            {{- toYaml .Values.envVars | trim | nindent 12 }}
+            - name: OTEL_SERVICE_NAME
+              value: "{{ .Release.Name }}"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment={{ .Values.env }},service.namespace={{ .Release.Namespace }}"

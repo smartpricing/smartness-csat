@@ -1,0 +1,89 @@
+{
+  "version": "2.0.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch backend",
+      "preLaunchTask": "build",
+      "cwd": "${workspaceFolder}/src",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "envFile": "${workspaceFolder}/.env",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Integration Tests",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vitest",
+        "run",
+        "--config",
+        "vitest.integration.config.ts",
+        "--reporter=verbose",
+        "--no-coverage"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "skipFiles": ["<node_modules>/**", "**/node_modules/**"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.test.env",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Unit Tests",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vitest",
+        "run",
+        "--config",
+        "vitest.unit.config.ts",
+        "--reporter=verbose",
+        "--no-coverage"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "skipFiles": ["<node_modules>/**", "**/node_modules/**"],
+      "cwd": "${workspaceFolder}",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Current Test File",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vitest",
+        "run",
+        "${relativeFile}",
+        "--reporter=verbose",
+        "--no-coverage"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "skipFiles": ["<node_modules>/**", "**/node_modules/**"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.test.env",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    }
+  ]
+}

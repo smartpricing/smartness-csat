@@ -1,0 +1,18 @@
+# Deployment resources
+replicas: 1
+resources:
+  limits:
+    memory: 400Mi
+  requests:
+    memory: 400Mi
+    cpu: 100m
+envVars:
+  - name: OTEL_SDK_DISABLED
+    value: "false"
+  - name: OTEL_TRACES_SAMPLER
+    value: "traceidratio"
+  - name: OTEL_TRACES_SAMPLER_ARG
+    value: "1"
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://grafana-k8s-monitoring-alloy-receiver.grafana.svc.cluster.local:4318"
+port: 3018

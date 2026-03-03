@@ -1,0 +1,12 @@
+{
+  "extends": ["@tsconfig/node22/tsconfig.json", "@tsconfig/strictest/tsconfig.json"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "module": "NodeNext",
+    "lib": ["ESNext"]
+  },
+  "exclude": ["node_modules", "**/*.js", "__tests__", "*.mjs", "*.ts"]
+}
