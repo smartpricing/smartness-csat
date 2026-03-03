@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { type SetupServerApi, setupServer } from 'msw/node';
 import supertest from 'supertest';
 import type TestAgent from 'supertest/lib/agent.js';
 import { getConfig } from '../../config.js';
@@ -7,9 +8,15 @@ import { startServer } from '../../server/index.js';
 export class TestServerManager {
   public fastifyInstance: FastifyInstance | null = null;
   public request: TestAgent | null = null;
+  public mswServer: SetupServerApi | null = null;
   public port: number = Math.floor(Math.random() * (13000 - 12000 + 1)) + 12000;
 
   async start(): Promise<void> {
+    this.mswServer = setupServer();
+    this.mswServer.listen({
+      onUnhandledRequest: 'bypass',
+    });
+
     const config = getConfig();
     config.server.port = this.port;
 
@@ -24,6 +31,11 @@ export class TestServerManager {
       if (this.fastifyInstance) {
         await this.fastifyInstance.close();
         this.fastifyInstance = null;
+      }
+
+      if (this.mswServer) {
+        this.mswServer.close();
+        this.mswServer = null;
       }
     } catch (error) {
       console.error('Error stopping test server:', error);

@@ -1,3 +1,5 @@
+import { subDays } from 'date-fns';
+import { HttpResponse, http } from 'msw';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TestServerManager } from '../setup/TestServerManager.js';
@@ -21,6 +23,8 @@ describe('User Interaction Flow', () => {
     await truncateAllTables(pool);
     await setupTestData(pool);
     await testServerManager.start();
+
+    setupApiGatewayMocks(testServerManager, userEmail);
   });
 
   afterAll(async () => {
@@ -206,4 +210,67 @@ async function setupTestData(pool: Pool): Promise<void> {
       ('test-product', 'test-feature', 'A test feature', 3, 2),
       ('test-product', 'test-feature-2', 'Another test feature', 3, 2)
   `);
+}
+
+function setupApiGatewayMocks(testServerManager: TestServerManager, userEmail: string): void {
+  const apiGatewayUrl = process.env['API_GATEWAY_URL'] ?? 'http://localhost:3001';
+  const userId = 123;
+  const propertySetId = 'ps-456';
+  const firstLiveDate = subDays(new Date(), 60).toISOString();
+
+  testServerManager.mswServer?.use(
+    http.get(`${apiGatewayUrl}/api/user/v1/users`, ({ request }) => {
+      const url = new URL(request.url);
+      const username = url.searchParams.get('username');
+
+      if (username === userEmail) {
+        return HttpResponse.json({
+          items: [
+            {
+              metadata: { id: String(userId) },
+              spec: { username: userEmail },
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ items: [] });
+    }),
+
+    http.get(`${apiGatewayUrl}/api/user/v1/users/:userId/property_set`, ({ params }) => {
+      if (params['userId'] === String(userId)) {
+        return HttpResponse.json({
+          items: [
+            {
+              spec: {
+                kind: 'Physical',
+                property_set_id: propertySetId,
+              },
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ items: [] });
+    }),
+
+    http.get(`${apiGatewayUrl}/api/lifecycle/v3/propertysetstate/:accommodationId`, ({ params }) => {
+      if (params['accommodationId'] === propertySetId) {
+        return HttpResponse.json({
+          items: [
+            {
+              metadata: {
+                bundle: 'smartpricing',
+                name: 'live',
+                insertDate: firstLiveDate,
+                lifecycleStateName: 'live',
+              },
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ items: [] });
+    }),
+  );
 }

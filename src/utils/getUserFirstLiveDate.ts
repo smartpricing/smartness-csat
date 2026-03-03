@@ -1,6 +1,16 @@
 import { ApiGatewayClient } from '../clients/ApiGatewayClient.js';
-import { PostgresClient } from '../clients/PostgresClient.js';
 import { logger } from './logger.js';
+
+type UserResponse = {
+  items: {
+    metadata: {
+      id: string;
+    };
+    spec: {
+      username: string;
+    };
+  }[];
+};
 
 type PropertySetResponse = {
   items: {
@@ -23,15 +33,19 @@ type LifecycleResponse = {
 };
 
 async function getUserIdByEmail(
-  postgresClient: PostgresClient,
+  apiGatewayClient: ApiGatewayClient,
   userEmail: string,
 ): Promise<number | undefined> {
-  const result = await postgresClient.client.query<{ id: number }>(
-    'SELECT id FROM athena.users WHERE username = $1',
-    [userEmail],
-  );
+  const response = await apiGatewayClient.get<UserResponse>('/api/user/v1/users', {
+    username: userEmail,
+  });
 
-  return result.rows[0]?.id;
+  const user = response.items.find((item) => item.spec.username === userEmail);
+  if (!user) {
+    return undefined;
+  }
+
+  return Number.parseInt(user.metadata.id, 10);
 }
 
 async function getPropertySetIds(
@@ -87,10 +101,9 @@ async function getFirstLiveDateByAccommodationIds(
 }
 
 export async function getUserFirstLiveDate(userEmail: string): Promise<string | undefined> {
-  const postgresClient = PostgresClient.getInstance();
   const apiGatewayClient = ApiGatewayClient.getInstance();
 
-  const userId = await getUserIdByEmail(postgresClient, userEmail);
+  const userId = await getUserIdByEmail(apiGatewayClient, userEmail);
 
   if (!userId) {
     logger.warn({ msg: 'User not found by email', userEmail });

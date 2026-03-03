@@ -1,11 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { PostgresClient } from '../../clients/PostgresClient.js';
-import { GetFeedbackAnalyticsUsecase } from '../../usecases/feedbacks/GetFeedbackAnalyticsUsecase.js';
 import { SaveFeedbackUsecase } from '../../usecases/feedbacks/SaveFeedbackUsecase.js';
 import {
-  GetFeedbackAnalyticsQuerySchema,
-  GetFeedbackAnalyticsResponseSchema,
   SaveFeedbackBodySchema,
   SaveFeedbackParamsSchema,
   SaveFeedbackResponseSchema,
@@ -16,7 +13,8 @@ export async function getFeedbacksRouter(fastifyInstance: FastifyInstance) {
     '/products/:product_key/features/:feature_key/feedbacks',
     {
       schema: {
-        description: 'Save user feedback for a specific feature',
+        summary: 'Submit feedback',
+        description: 'Saves a user\'s CSAT feedback (rating + optional comment) for a specific product feature. The source field indicates whether the feedback was prompted by the system or submitted voluntarily.',
         tags: ['feedbacks'],
         params: SaveFeedbackParamsSchema,
         body: SaveFeedbackBodySchema,
@@ -40,31 +38,6 @@ export async function getFeedbacksRouter(fastifyInstance: FastifyInstance) {
       });
 
       return reply.code(201).send(result);
-    },
-  );
-
-  fastifyInstance.withTypeProvider<ZodTypeProvider>().get(
-    '/feedbacks/analytics',
-    {
-      schema: {
-        description: 'Get quarterly feedback analytics by product and/or feature',
-        tags: ['feedbacks'],
-        querystring: GetFeedbackAnalyticsQuerySchema,
-        response: {
-          200: GetFeedbackAnalyticsResponseSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const postgresClient = PostgresClient.getInstance();
-      const usecase = new GetFeedbackAnalyticsUsecase(postgresClient);
-
-      const result = await usecase.execute({
-        productKey: request.query.product_key,
-        featureKey: request.query.feature_key,
-      });
-
-      return reply.code(200).send(result);
     },
   );
 
