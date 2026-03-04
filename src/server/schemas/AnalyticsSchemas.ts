@@ -14,17 +14,62 @@ export const FeatureInteractionSummarySchema = z.object({
   users_rejection_exhausted: z.number().describe('Users who have exhausted their rejection threshold and will never be prompted again'),
 });
 
-export const FeatureInteractionUserRowSchema = z.object({
+export const GetFeatureInteractionAnalyticsResponseSchema = z.object({
+  summary: FeatureInteractionSummarySchema,
+});
+
+export const PaginatedListQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50).describe('Number of items per page (max 100)'),
+  cursor: z.string().optional().describe('Cursor for pagination'),
+});
+
+export const UserInteractionItemSchema = z.object({
+  id: z.string().describe('Interaction record ID'),
   user_email: z.string().describe('User email'),
   interaction_count: z.number().describe('Interactions since last rejection'),
   total_interaction_count: z.number().describe('All-time interaction count'),
   rejection_count: z.number().describe('Number of times the user dismissed the CSAT prompt'),
   should_request_feedback: z.boolean().describe('Whether the prompt should be shown right now'),
-  latest_user_agent: z.string().nullable().describe('Last recorded user agent'),
+  created_at: z.string().describe('First interaction timestamp'),
   updated_at: z.string().describe('Last interaction timestamp'),
 });
 
-export const GetFeatureInteractionAnalyticsResponseSchema = z.object({
-  summary: FeatureInteractionSummarySchema,
-  users: z.array(FeatureInteractionUserRowSchema),
+export const GetUserInteractionsListResponseSchema = z.object({
+  data: z.array(UserInteractionItemSchema),
+  next_cursor: z.string().nullable().describe('Cursor for the next page'),
+  has_more: z.boolean().describe('Whether there are more items'),
+});
+
+export const FeedbackItemSchema = z.object({
+  id: z.string().describe('Feedback ID'),
+  user_email: z.string().describe('User email'),
+  rating: z.number().describe('Rating from 1 to 10'),
+  comment: z.string().nullable().describe('Optional comment'),
+  source: z.string().describe('Whether feedback was prompted or voluntary'),
+  user_agent: z.string().nullable().describe('User agent string'),
+  created_at: z.string().describe('Feedback submission timestamp'),
+});
+
+export const GetFeedbacksListResponseSchema = z.object({
+  data: z.array(FeedbackItemSchema),
+  next_cursor: z.string().nullable().describe('Cursor for the next page'),
+  has_more: z.boolean().describe('Whether there are more items'),
+});
+
+export const RatingDistributionSchema = z.object({
+  rating: z.number().describe('Rating value (1-10)'),
+  count: z.number().describe('Number of feedbacks with this rating'),
+});
+
+export const FeedbackSummarySchema = z.object({
+  total_feedbacks: z.number().describe('Total number of feedback submissions'),
+  average_rating: z.number().describe('Average rating across all feedbacks'),
+  median_rating: z.number().describe('Median rating'),
+  rating_distribution: z.array(RatingDistributionSchema).describe('Count of feedbacks per rating'),
+  prompted_count: z.number().describe('Number of prompted feedbacks'),
+  voluntary_count: z.number().describe('Number of voluntary feedbacks'),
+});
+
+export const GetFeedbackSummaryAnalyticsResponseSchema = z.object({
+  summary: FeedbackSummarySchema,
 });
