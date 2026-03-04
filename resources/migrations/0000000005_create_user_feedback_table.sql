@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS csat.user_feedback (
     source TEXT NOT NULL CHECK (source IN ('prompted', 'voluntary')),
     state TEXT NOT NULL DEFAULT 'PENDING' CHECK (state IN ('PENDING', 'TRANSLATED', 'DONE')),
     user_agent TEXT,
+    notes TEXT,
+    notes_updated_by TEXT,
+    notes_updated_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     translated_at TIMESTAMP
 );

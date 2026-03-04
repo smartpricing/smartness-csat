@@ -26,3 +26,19 @@ export const ProcessFeedbacksResponseSchema = z.object({
   translated_count: z.number().describe('Number of feedbacks translated in this run'),
   done_count: z.number().describe('Number of feedbacks synced and marked as done in this run'),
 });
+
+export const UpdateFeedbackNotesParamsSchema = z.object({
+  feedback_id: z.string().uuid().describe('Feedback ID'),
+});
+
+export const UpdateFeedbackNotesBodySchema = z.object({
+  notes: z.string().nullable().describe('Free text notes from the PO'),
+  updated_by: z.string().email().describe('Email of the user updating the notes'),
+});
+
+export const UpdateFeedbackNotesResponseSchema = z.object({
+  id: z.string().describe('Feedback ID'),
+  notes: z.string().nullable().describe('Updated notes'),
+  notes_updated_by: z.string().nullable().describe('Email of the user who updated the notes'),
+  notes_updated_at: z.string().nullable().describe('Timestamp when notes were updated'),
+});

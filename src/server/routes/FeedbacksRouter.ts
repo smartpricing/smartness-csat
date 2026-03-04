@@ -3,11 +3,15 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { PostgresClient } from '../../clients/PostgresClient.js';
 import { ProcessFeedbacksUsecase } from '../../usecases/feedbacks/ProcessFeedbacksUsecase.js';
 import { SaveFeedbackUsecase } from '../../usecases/feedbacks/SaveFeedbackUsecase.js';
+import { UpdateFeedbackNotesUsecase } from '../../usecases/feedbacks/UpdateFeedbackNotesUsecase.js';
 import {
   ProcessFeedbacksResponseSchema,
   SaveFeedbackBodySchema,
   SaveFeedbackParamsSchema,
   SaveFeedbackResponseSchema,
+  UpdateFeedbackNotesBodySchema,
+  UpdateFeedbackNotesParamsSchema,
+  UpdateFeedbackNotesResponseSchema,
 } from '../schemas/FeedbacksSchemas.js';
 
 export async function getFeedbacksRouter(fastifyInstance: FastifyInstance) {
@@ -62,6 +66,34 @@ export async function getFeedbacksRouter(fastifyInstance: FastifyInstance) {
       const usecase = new ProcessFeedbacksUsecase(postgresClient);
 
       const result = await usecase.execute();
+
+      return reply.code(200).send(result);
+    },
+  );
+
+  fastifyInstance.withTypeProvider<ZodTypeProvider>().patch(
+    '/feedbacks/:feedback_id/notes',
+    {
+      schema: {
+        summary: 'Update feedback notes',
+        description: 'Updates the notes field on a feedback. This is free text intended for PO annotations.',
+        tags: ['feedbacks'],
+        params: UpdateFeedbackNotesParamsSchema,
+        body: UpdateFeedbackNotesBodySchema,
+        response: {
+          200: UpdateFeedbackNotesResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const postgresClient = PostgresClient.getInstance();
+      const usecase = new UpdateFeedbackNotesUsecase(postgresClient);
+
+      const result = await usecase.execute({
+        feedbackId: request.params.feedback_id,
+        notes: request.body.notes,
+        updatedBy: request.body.updated_by,
+      });
 
       return reply.code(200).send(result);
     },
