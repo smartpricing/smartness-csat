@@ -1,6 +1,6 @@
 {
   "name": "smartness-csat",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Smartness CSAT Feedback Service",
   "main": "index.js",
   "scripts": {
