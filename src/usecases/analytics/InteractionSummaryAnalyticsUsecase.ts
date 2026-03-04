@@ -14,14 +14,14 @@ type Summary = {
   users_rejection_exhausted: number;
 };
 
-export type GetFeatureInteractionAnalyticsResponse = {
+export type InteractionSummaryAnalyticsResponse = {
   summary: Summary;
 };
 
-export class GetFeatureInteractionAnalyticsUsecase {
+export class InteractionSummaryAnalyticsUsecase {
   constructor(private readonly _postgresClient: PostgresClient) {}
 
-  async execute(params: Params): Promise<GetFeatureInteractionAnalyticsResponse> {
+  async execute(params: Params): Promise<InteractionSummaryAnalyticsResponse> {
     const { productKey, featureKey } = params;
 
     const result = await this._postgresClient.client.query<{

@@ -35,4 +35,19 @@ export class ApiGatewayClient {
     const { data } = await this._client.get<T>(url, { params });
     return data;
   }
+
+  async post<T>(url: string, body: Record<string, unknown>): Promise<T> {
+    const { data } = await this._client.post<T>(url, body);
+    return data;
+  }
+
+  async postForm<T>(url: string, formData: Record<string, string>): Promise<T> {
+    const params = new URLSearchParams(formData);
+    const { data } = await this._client.post<T>(url, params, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    return data;
+  }
 }

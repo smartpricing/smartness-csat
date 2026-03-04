@@ -1,15 +1,17 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { PostgresClient } from '../../clients/PostgresClient.js';
-import { GetFeedbacksListUsecase } from '../../usecases/analytics/GetFeedbacksListUsecase.js';
-import { GetFeedbackSummaryAnalyticsUsecase } from '../../usecases/analytics/GetFeedbackSummaryAnalyticsUsecase.js';
-import { GetFeatureInteractionAnalyticsUsecase } from '../../usecases/analytics/GetFeatureInteractionAnalyticsUsecase.js';
-import { GetUserInteractionsListUsecase } from '../../usecases/analytics/GetUserInteractionsListUsecase.js';
+import { FeedbackQuartersAnalyticsUsecase } from '../../usecases/analytics/FeedbackQuartersAnalyticsUsecase.js';
+import { FeedbackSummaryAnalyticsUsecase } from '../../usecases/analytics/FeedbackSummaryAnalyticsUsecase.js';
+import { FeedbackUsersAnalyticsUsecase } from '../../usecases/analytics/FeedbackUsersAnalyticsUsecase.js';
+import { InteractionSummaryAnalyticsUsecase } from '../../usecases/analytics/InteractionSummaryAnalyticsUsecase.js';
+import { InteractionUsersAnalyticsUsecase } from '../../usecases/analytics/InteractionUsersAnalyticsUsecase.js';
 import {
   GetFeatureInteractionAnalyticsParamsSchema,
   GetFeatureInteractionAnalyticsResponseSchema,
   GetFeedbacksListResponseSchema,
   GetFeedbackSummaryAnalyticsResponseSchema,
+  GetFeedbackTimeSeriesResponseSchema,
   GetUserInteractionsListResponseSchema,
   PaginatedListQuerySchema,
 } from '../schemas/AnalyticsSchemas.js';
@@ -30,7 +32,7 @@ export async function getAnalyticsRouter(fastifyInstance: FastifyInstance) {
     },
     async (request, reply) => {
       const postgresClient = PostgresClient.getInstance();
-      const usecase = new GetFeatureInteractionAnalyticsUsecase(postgresClient);
+      const usecase = new InteractionSummaryAnalyticsUsecase(postgresClient);
 
       const result = await usecase.execute({
         productKey: request.params.product_key,
@@ -57,7 +59,7 @@ export async function getAnalyticsRouter(fastifyInstance: FastifyInstance) {
     },
     async (request, reply) => {
       const postgresClient = PostgresClient.getInstance();
-      const usecase = new GetUserInteractionsListUsecase(postgresClient);
+      const usecase = new InteractionUsersAnalyticsUsecase(postgresClient);
 
       const result = await usecase.execute({
         productKey: request.params.product_key,
@@ -85,7 +87,7 @@ export async function getAnalyticsRouter(fastifyInstance: FastifyInstance) {
     },
     async (request, reply) => {
       const postgresClient = PostgresClient.getInstance();
-      const usecase = new GetFeedbackSummaryAnalyticsUsecase(postgresClient);
+      const usecase = new FeedbackSummaryAnalyticsUsecase(postgresClient);
 
       const result = await usecase.execute({
         productKey: request.params.product_key,
@@ -112,13 +114,39 @@ export async function getAnalyticsRouter(fastifyInstance: FastifyInstance) {
     },
     async (request, reply) => {
       const postgresClient = PostgresClient.getInstance();
-      const usecase = new GetFeedbacksListUsecase(postgresClient);
+      const usecase = new FeedbackUsersAnalyticsUsecase(postgresClient);
 
       const result = await usecase.execute({
         productKey: request.params.product_key,
         featureKey: request.params.feature_key,
         limit: request.query.limit,
         cursor: request.query.cursor,
+      });
+
+      return reply.code(200).send(result);
+    },
+  );
+
+  fastifyInstance.withTypeProvider<ZodTypeProvider>().get(
+    '/products/:product_key/features/:feature_key/feedbacks/timeseries',
+    {
+      schema: {
+        summary: 'Feedback time series analytics',
+        description: 'Returns monthly and quarterly breakdown of feedback analytics for a specific feature. Includes feedback count, average rating, and median rating for each time period.',
+        tags: ['analytics'],
+        params: GetFeatureInteractionAnalyticsParamsSchema,
+        response: {
+          200: GetFeedbackTimeSeriesResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const postgresClient = PostgresClient.getInstance();
+      const usecase = new FeedbackQuartersAnalyticsUsecase(postgresClient);
+
+      const result = await usecase.execute({
+        productKey: request.params.product_key,
+        featureKey: request.params.feature_key,
       });
 
       return reply.code(200).send(result);

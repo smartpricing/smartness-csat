@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-process-feedbacks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: {{ .Release.Name }}-process-feedbacks
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: curl
+              image: curlimages/curl:8.5.0
+              command:
+                - curl
+                - -X
+                - POST
+                - -f
+                - --max-time
+                - "120"
+                - http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc:{{ .Values.port }}/api/csat/v1/feedbacks/process

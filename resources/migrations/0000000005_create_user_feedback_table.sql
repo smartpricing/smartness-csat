@@ -4,9 +4,12 @@ CREATE TABLE IF NOT EXISTS csat.user_feedback (
     product_feature_id UUID NOT NULL REFERENCES csat.product_feature(id),
     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 10),
     comment TEXT,
+    comment_en TEXT,
     source TEXT NOT NULL CHECK (source IN ('prompted', 'voluntary')),
+    state TEXT NOT NULL DEFAULT 'PENDING' CHECK (state IN ('PENDING', 'TRANSLATED', 'DONE')),
     user_agent TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    translated_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_feedback_user_email_product_feature_id
@@ -15,3 +18,7 @@ CREATE INDEX IF NOT EXISTS idx_user_feedback_user_email_product_feature_id
 CREATE INDEX IF NOT EXISTS idx_user_feedback_analytics
     ON csat.user_feedback (product_feature_id, created_at)
     INCLUDE (rating);
+
+CREATE INDEX IF NOT EXISTS idx_user_feedback_state
+    ON csat.user_feedback (state)
+    WHERE state != 'DONE';

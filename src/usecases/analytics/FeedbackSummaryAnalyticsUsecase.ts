@@ -9,22 +9,18 @@ type Summary = {
   total_feedbacks: number;
   average_rating: number;
   median_rating: number;
-  rating_distribution: {
-    rating: number;
-    count: number;
-  }[];
   prompted_count: number;
   voluntary_count: number;
 };
 
-export type GetFeedbackSummaryAnalyticsResponse = {
+export type FeedbackSummaryAnalyticsResponse = {
   summary: Summary;
 };
 
-export class GetFeedbackSummaryAnalyticsUsecase {
+export class FeedbackSummaryAnalyticsUsecase {
   constructor(private readonly _postgresClient: PostgresClient) {}
 
-  async execute(params: Params): Promise<GetFeedbackSummaryAnalyticsResponse> {
+  async execute(params: Params): Promise<FeedbackSummaryAnalyticsResponse> {
     const { productKey, featureKey } = params;
 
     const summaryResult = await this._postgresClient.client.query<{
@@ -41,21 +37,6 @@ export class GetFeedbackSummaryAnalyticsUsecase {
        FROM csat.user_feedback uf
        JOIN csat.product_feature pf ON pf.id = uf.product_feature_id
        WHERE pf.product_key = $1 AND pf.key = $2`,
-      [productKey, featureKey],
-    );
-
-    const distributionResult = await this._postgresClient.client.query<{
-      rating: number;
-      count: string;
-    }>(
-      `SELECT
-         uf.rating,
-         COUNT(*)::TEXT AS count
-       FROM csat.user_feedback uf
-       JOIN csat.product_feature pf ON pf.id = uf.product_feature_id
-       WHERE pf.product_key = $1 AND pf.key = $2
-       GROUP BY uf.rating
-       ORDER BY uf.rating`,
       [productKey, featureKey],
     );
 
@@ -79,10 +60,6 @@ export class GetFeedbackSummaryAnalyticsUsecase {
           ? Number.parseFloat(Number.parseFloat(row.average_rating).toFixed(2))
           : 0,
         median_rating: this._calculateMedian(ratings),
-        rating_distribution: distributionResult.rows.map((r) => ({
-          rating: r.rating,
-          count: Number.parseInt(r.count, 10),
-        })),
         prompted_count: Number.parseInt(row?.prompted_count ?? '0', 10),
         voluntary_count: Number.parseInt(row?.voluntary_count ?? '0', 10),
       },

@@ -21,3 +21,8 @@ export const SaveFeedbackResponseSchema = z.object({
   user_agent: z.string().nullable().describe('User agent string from the browser'),
   created_at: z.string().describe('Created at'),
 });
+
+export const ProcessFeedbacksResponseSchema = z.object({
+  translated_count: z.number().describe('Number of feedbacks translated in this run'),
+  done_count: z.number().describe('Number of feedbacks synced and marked as done in this run'),
+});

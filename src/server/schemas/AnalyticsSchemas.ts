@@ -56,20 +56,35 @@ export const GetFeedbacksListResponseSchema = z.object({
   has_more: z.boolean().describe('Whether there are more items'),
 });
 
-export const RatingDistributionSchema = z.object({
-  rating: z.number().describe('Rating value (1-10)'),
-  count: z.number().describe('Number of feedbacks with this rating'),
-});
-
 export const FeedbackSummarySchema = z.object({
   total_feedbacks: z.number().describe('Total number of feedback submissions'),
   average_rating: z.number().describe('Average rating across all feedbacks'),
   median_rating: z.number().describe('Median rating'),
-  rating_distribution: z.array(RatingDistributionSchema).describe('Count of feedbacks per rating'),
   prompted_count: z.number().describe('Number of prompted feedbacks'),
   voluntary_count: z.number().describe('Number of voluntary feedbacks'),
 });
 
 export const GetFeedbackSummaryAnalyticsResponseSchema = z.object({
   summary: FeedbackSummarySchema,
+});
+
+export const MonthlyFeedbackDataSchema = z.object({
+  year: z.number().describe('Year'),
+  month: z.number().describe('Month (1-12)'),
+  feedback_count: z.number().describe('Number of feedbacks'),
+  average_rating: z.number().describe('Average rating'),
+  median_rating: z.number().describe('Median rating'),
+});
+
+export const QuarterlyFeedbackDataSchema = z.object({
+  year: z.number().describe('Year'),
+  quarter: z.number().describe('Quarter (1-4)'),
+  feedback_count: z.number().describe('Number of feedbacks'),
+  average_rating: z.number().describe('Average rating'),
+  median_rating: z.number().describe('Median rating'),
+});
+
+export const GetFeedbackTimeSeriesResponseSchema = z.object({
+  monthly: z.array(MonthlyFeedbackDataSchema).describe('Monthly breakdown'),
+  quarterly: z.array(QuarterlyFeedbackDataSchema).describe('Quarterly breakdown'),
 });
