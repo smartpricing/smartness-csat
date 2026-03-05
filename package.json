@@ -10,7 +10,8 @@
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:unit:coverage": "vitest run --coverage --config vitest.unit.config.ts",
-    "test:integration:coverage": "vitest run --coverage --config vitest.integration.config.ts"
+    "test:integration:coverage": "vitest run --coverage --config vitest.integration.config.ts",
+    "import:legacy": "tsc && node --env-file-if-exists=.env dist/scripts/import-legacy-data.js"
   },
   "type": "module",
   "keywords": [

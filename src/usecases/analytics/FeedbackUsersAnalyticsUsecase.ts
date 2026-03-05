@@ -12,6 +12,7 @@ type FeedbackItem = {
   user_email: string;
   rating: number;
   comment: string | null;
+  comment_en: string | null;
   source: string;
   user_agent: string | null;
   created_at: string;
@@ -46,6 +47,7 @@ export class FeedbackUsersAnalyticsUsecase {
       user_email: string;
       rating: number;
       comment: string | null;
+      comment_en: string | null;
       source: string;
       user_agent: string | null;
       created_at: Date;
@@ -55,6 +57,7 @@ export class FeedbackUsersAnalyticsUsecase {
          uf.user_email,
          uf.rating,
          uf.comment,
+         uf.comment_en,
          uf.source,
          uf.user_agent,
          uf.created_at
@@ -82,6 +85,7 @@ export class FeedbackUsersAnalyticsUsecase {
         user_email: row.user_email,
         rating: row.rating,
         comment: row.comment,
+        comment_en: row.comment_en,
         source: row.source,
         user_agent: row.user_agent,
         created_at: row.created_at.toISOString(),
