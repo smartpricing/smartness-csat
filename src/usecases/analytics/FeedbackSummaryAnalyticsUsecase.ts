@@ -9,6 +9,7 @@ type Summary = {
   total_feedbacks: number;
   average_rating: number;
   median_rating: number;
+  pm_rating: number;
   prompted_count: number;
   voluntary_count: number;
 };
@@ -26,12 +27,14 @@ export class FeedbackSummaryAnalyticsUsecase {
     const summaryResult = await this._postgresClient.client.query<{
       total_feedbacks: string;
       average_rating: string | null;
+      positive_count: string;
       prompted_count: string;
       voluntary_count: string;
     }>(
       `SELECT
          COUNT(*)::TEXT AS total_feedbacks,
          AVG(uf.rating)::TEXT AS average_rating,
+         COUNT(*) FILTER (WHERE uf.rating > 5)::TEXT AS positive_count,
          COUNT(*) FILTER (WHERE uf.source = 'prompted')::TEXT AS prompted_count,
          COUNT(*) FILTER (WHERE uf.source = 'voluntary')::TEXT AS voluntary_count
        FROM csat.user_feedback uf
@@ -53,13 +56,17 @@ export class FeedbackSummaryAnalyticsUsecase {
     const row = summaryResult.rows[0];
     const ratings = ratingsResult.rows[0]?.ratings ?? [];
 
+    const totalFeedbacks = Number.parseInt(row?.total_feedbacks ?? '0', 10);
+    const positiveCount = Number.parseInt(row?.positive_count ?? '0', 10);
+
     return {
       summary: {
-        total_feedbacks: Number.parseInt(row?.total_feedbacks ?? '0', 10),
+        total_feedbacks: totalFeedbacks,
         average_rating: row?.average_rating
           ? Number.parseFloat(Number.parseFloat(row.average_rating).toFixed(2))
           : 0,
         median_rating: this._calculateMedian(ratings),
+        pm_rating: totalFeedbacks > 0 ? Number.parseFloat((positiveCount / totalFeedbacks).toFixed(2)) : 0,
         prompted_count: Number.parseInt(row?.prompted_count ?? '0', 10),
         voluntary_count: Number.parseInt(row?.voluntary_count ?? '0', 10),
       },

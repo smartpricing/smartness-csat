@@ -6,11 +6,9 @@ export const GetFeatureInteractionAnalyticsParamsSchema = z.object({
 });
 
 export const FeatureInteractionSummarySchema = z.object({
-  total_users: z.number().describe('Total number of users who have an interaction record for this feature'),
-  users_with_interactions: z.number().describe('Users with at least one interaction'),
+  users_with_interactions: z.number().describe('Total number of users who have an interaction record for this feature'),
   avg_total_interactions: z.number().describe('Average total interaction count across all users (rounded)'),
   max_total_interactions: z.number().describe('Highest total interaction count recorded for a single user'),
-  users_pending_feedback: z.number().describe('Users for whom the CSAT prompt should currently be shown'),
   users_rejection_exhausted: z.number().describe('Users who have exhausted their rejection threshold and will never be prompted again'),
 });
 
@@ -61,6 +59,7 @@ export const FeedbackSummarySchema = z.object({
   total_feedbacks: z.number().describe('Total number of feedback submissions'),
   average_rating: z.number().describe('Average rating across all feedbacks'),
   median_rating: z.number().describe('Median rating'),
+  pm_rating: z.number().describe('Ratio of positive feedbacks (rating > 5) to total feedbacks (0–1)'),
   prompted_count: z.number().describe('Number of prompted feedbacks'),
   voluntary_count: z.number().describe('Number of voluntary feedbacks'),
 });
@@ -75,6 +74,7 @@ export const MonthlyFeedbackDataSchema = z.object({
   feedback_count: z.number().describe('Number of feedbacks'),
   average_rating: z.number().describe('Average rating'),
   median_rating: z.number().describe('Median rating'),
+  pm_rating: z.number().describe('Ratio of positive feedbacks (rating > 5) to total feedbacks (0–1)'),
 });
 
 export const QuarterlyFeedbackDataSchema = z.object({
@@ -83,6 +83,7 @@ export const QuarterlyFeedbackDataSchema = z.object({
   feedback_count: z.number().describe('Number of feedbacks'),
   average_rating: z.number().describe('Average rating'),
   median_rating: z.number().describe('Median rating'),
+  pm_rating: z.number().describe('Ratio of positive feedbacks (rating > 5) to total feedbacks (0–1)'),
 });
 
 export const GetFeedbackTimeSeriesResponseSchema = z.object({

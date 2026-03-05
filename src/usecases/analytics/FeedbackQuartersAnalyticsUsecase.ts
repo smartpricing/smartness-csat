@@ -11,6 +11,7 @@ type MonthlyData = {
   feedback_count: number;
   average_rating: number;
   median_rating: number;
+  pm_rating: number;
 };
 
 type QuarterlyData = {
@@ -19,6 +20,7 @@ type QuarterlyData = {
   feedback_count: number;
   average_rating: number;
   median_rating: number;
+  pm_rating: number;
 };
 
 export type FeedbackQuartersAnalyticsResponse = {
@@ -37,6 +39,7 @@ export class FeedbackQuartersAnalyticsUsecase {
       month: number;
       feedback_count: string;
       average_rating: string;
+      positive_count: string;
       ratings: number[];
     }>(
       `SELECT
@@ -44,6 +47,7 @@ export class FeedbackQuartersAnalyticsUsecase {
          EXTRACT(MONTH FROM uf.created_at)::INTEGER AS month,
          COUNT(*)::TEXT AS feedback_count,
          AVG(uf.rating)::TEXT AS average_rating,
+         COUNT(*) FILTER (WHERE uf.rating > 5)::TEXT AS positive_count,
          ARRAY_AGG(uf.rating ORDER BY uf.rating) AS ratings
        FROM csat.user_feedback uf
        JOIN csat.product_feature pf ON pf.id = uf.product_feature_id
@@ -58,6 +62,7 @@ export class FeedbackQuartersAnalyticsUsecase {
       quarter: number;
       feedback_count: string;
       average_rating: string;
+      positive_count: string;
       ratings: number[];
     }>(
       `SELECT
@@ -65,6 +70,7 @@ export class FeedbackQuartersAnalyticsUsecase {
          EXTRACT(QUARTER FROM uf.created_at)::INTEGER AS quarter,
          COUNT(*)::TEXT AS feedback_count,
          AVG(uf.rating)::TEXT AS average_rating,
+         COUNT(*) FILTER (WHERE uf.rating > 5)::TEXT AS positive_count,
          ARRAY_AGG(uf.rating ORDER BY uf.rating) AS ratings
        FROM csat.user_feedback uf
        JOIN csat.product_feature pf ON pf.id = uf.product_feature_id
@@ -75,20 +81,30 @@ export class FeedbackQuartersAnalyticsUsecase {
     );
 
     return {
-      monthly: monthlyResult.rows.map((row) => ({
-        year: row.year,
-        month: row.month,
-        feedback_count: Number.parseInt(row.feedback_count, 10),
-        average_rating: Number.parseFloat(Number.parseFloat(row.average_rating).toFixed(2)),
-        median_rating: this._calculateMedian(row.ratings),
-      })),
-      quarterly: quarterlyResult.rows.map((row) => ({
-        year: row.year,
-        quarter: row.quarter,
-        feedback_count: Number.parseInt(row.feedback_count, 10),
-        average_rating: Number.parseFloat(Number.parseFloat(row.average_rating).toFixed(2)),
-        median_rating: this._calculateMedian(row.ratings),
-      })),
+      monthly: monthlyResult.rows.map((row) => {
+        const total = Number.parseInt(row.feedback_count, 10);
+        const positive = Number.parseInt(row.positive_count, 10);
+        return {
+          year: row.year,
+          month: row.month,
+          feedback_count: total,
+          average_rating: Number.parseFloat(Number.parseFloat(row.average_rating).toFixed(2)),
+          median_rating: this._calculateMedian(row.ratings),
+          pm_rating: total > 0 ? Number.parseFloat((positive / total).toFixed(2)) : 0,
+        };
+      }),
+      quarterly: quarterlyResult.rows.map((row) => {
+        const total = Number.parseInt(row.feedback_count, 10);
+        const positive = Number.parseInt(row.positive_count, 10);
+        return {
+          year: row.year,
+          quarter: row.quarter,
+          feedback_count: total,
+          average_rating: Number.parseFloat(Number.parseFloat(row.average_rating).toFixed(2)),
+          median_rating: this._calculateMedian(row.ratings),
+          pm_rating: total > 0 ? Number.parseFloat((positive / total).toFixed(2)) : 0,
+        };
+      }),
     };
   }
 
