@@ -7,6 +7,7 @@ type GetFeaturesParams = {
 type FeatureEntity = {
   product_key: string;
   feature_key: string;
+  name: string | null;
   description: string | null;
   interaction_threshold: number;
   rejection_threshold: number;
@@ -23,13 +24,13 @@ export class GetFeaturesUsecase {
     const hasFilter = params.productKeys && params.productKeys.length > 0;
 
     const query = hasFilter
-      ? `SELECT pf.product_key, pf.key AS feature_key, pf.description,
+      ? `SELECT pf.product_key, pf.key AS feature_key, pf.name, pf.description,
                 pf.interaction_threshold, pf.rejection_threshold
          FROM csat.product_feature pf
          JOIN csat.product p ON p.key = pf.product_key
          WHERE pf.product_key = ANY($1)
          ORDER BY pf.product_key, pf.key`
-      : `SELECT pf.product_key, pf.key AS feature_key, pf.description,
+      : `SELECT pf.product_key, pf.key AS feature_key, pf.name, pf.description,
                 pf.interaction_threshold, pf.rejection_threshold
          FROM csat.product_feature pf
          JOIN csat.product p ON p.key = pf.product_key
@@ -40,6 +41,7 @@ export class GetFeaturesUsecase {
     const result = await this._postgresClient.client.query<{
       product_key: string;
       feature_key: string;
+      name: string | null;
       description: string | null;
       interaction_threshold: number;
       rejection_threshold: number;
@@ -49,6 +51,7 @@ export class GetFeaturesUsecase {
       data: result.rows.map((row) => ({
         product_key: row.product_key,
         feature_key: row.feature_key,
+        name: row.name,
         description: row.description,
         interaction_threshold: row.interaction_threshold,
         rejection_threshold: row.rejection_threshold,

@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS csat.product_feature (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_key TEXT NOT NULL REFERENCES csat.product(key),
     key TEXT NOT NULL,
+    name TEXT,
     description TEXT,
     interaction_threshold INTEGER NOT NULL,
     rejection_threshold INTEGER NOT NULL,

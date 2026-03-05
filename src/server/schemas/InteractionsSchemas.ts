@@ -67,6 +67,7 @@ export const GetFeaturesQuerySchema = z.object({
 export const FeatureEntitySchema = z.object({
   product_key: z.string().describe('Product key'),
   feature_key: z.string().describe('Feature key'),
+  name: z.string().nullable().describe('Feature display name'),
   description: z.string().nullable().describe('Feature description'),
   interaction_threshold: z.number().describe('Interactions required before CSAT prompt'),
   rejection_threshold: z.number().describe('Rejections before disabling prompt'),
@@ -75,3 +76,35 @@ export const FeatureEntitySchema = z.object({
 export const GetFeaturesResponseSchema = z.object({
   data: z.array(FeatureEntitySchema),
 });
+
+export const CreateFeatureParamsSchema = z.object({
+  product_key: z.string().describe('Product key'),
+});
+
+export const CreateFeatureBodySchema = z.object({
+  feature_key: z
+    .string()
+    .regex(/^[a-zA-Z0-9\-_.+]+$/, 'feature_key must only contain ASCII letters, numbers, or - _ . +')
+    .describe('Feature key (ASCII letters, numbers, -, _, ., + only)'),
+  description: z.string().optional().describe('Feature description'),
+  interaction_threshold: z.number().int().min(1).describe('Interactions required before CSAT prompt'),
+  rejection_threshold: z.number().int().min(1).describe('Rejections before disabling prompt'),
+});
+
+export const CreateFeatureResponseSchema = FeatureEntitySchema;
+
+export const UpdateFeatureParamsSchema = z.object({
+  product_key: z.string().describe('Product key'),
+  feature_key: z.string().describe('Feature key'),
+});
+
+export const UpdateFeatureBodySchema = z
+  .object({
+    name: z.string().nullable().optional().describe('Feature display name (null to clear)'),
+    description: z.string().nullable().optional().describe('Feature description (null to clear)'),
+  })
+  .refine((data) => data.name !== undefined || data.description !== undefined, {
+    message: 'At least one of name or description must be provided',
+  });
+
+export const UpdateFeatureResponseSchema = FeatureEntitySchema;

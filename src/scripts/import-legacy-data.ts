@@ -80,16 +80,14 @@ async function insertProducts(targetClient: pg.Client) {
   console.log(`Inserted ${Object.keys(PROJECT_MAPPING).length} products`);
 }
 
-async function importFeatures(
-  sourceClient: pg.Client,
-  targetClient: pg.Client,
-): Promise<Map<number, string>> {
+async function importFeatures(sourceClient: pg.Client, targetClient: pg.Client): Promise<Map<number, string>> {
   console.log('Importing features...');
 
   // Get features with their project info
   const result = await sourceClient.query<{
     id: number;
     event_key: string;
+    name: string;
     description: string | null;
     max_triggers: number | null;
     max_rejections: number | null;
@@ -98,6 +96,7 @@ async function importFeatures(
     SELECT 
       fe.id,
       fe.event_key,
+      fe.name,
       fe.description,
       fe.max_triggers,
       fe.max_rejections,
@@ -115,23 +114,19 @@ async function importFeatures(
     const product = PROJECT_MAPPING[row.project_key];
     if (!product) continue;
 
-    const featureKey = row.event_key || `feature-${row.id}`;
+    const featureKey = row.name || `feature-${row.id}`;
+    const featureName = row.name.replace(/-/g, ' ');
 
     const insertResult = await targetClient.query<{ id: string }>(
-      `INSERT INTO csat.product_feature (product_key, key, description, interaction_threshold, rejection_threshold)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (product_key, key) DO UPDATE SET description = EXCLUDED.description
+      `INSERT INTO csat.product_feature (product_key, key, name, description, interaction_threshold, rejection_threshold)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (product_key, key) DO UPDATE SET description = EXCLUDED.description, name = EXCLUDED.name
        RETURNING id`,
-      [
-        product.key,
-        featureKey,
-        row.description,
-        row.max_triggers || 5,
-        row.max_rejections || 3,
-      ],
+      [product.key, featureKey, featureName, row.description, row.max_triggers || 5, row.max_rejections || 3],
     );
 
-    featureMapping.set(row.id, insertResult.rows[0]!.id);
+    const insertedRow = insertResult.rows[0];
+    if (insertedRow) featureMapping.set(row.id, insertedRow.id);
   }
 
   console.log(`Imported ${featureMapping.size} features`);
@@ -184,7 +179,8 @@ async function importInteractions(
     interactions_before_trigger_count: number;
     created_at: Date;
     updated_at: Date;
-  }>(`
+  }>(
+    `
     SELECT 
       user_id,
       feature_event_id,
@@ -194,7 +190,9 @@ async function importInteractions(
       updated_at
     FROM feedback.user_feature_event_interactions
     WHERE feature_event_id = ANY($1)
-  `, [featureEventIds]);
+  `,
+    [featureEventIds],
+  );
 
   const batch: {
     userEmail: string;
@@ -275,7 +273,8 @@ async function importFeedbacks(
     feedback_score: number;
     feedback_comment: string | null;
     created_at: Date;
-  }>(`
+  }>(
+    `
     SELECT 
       feature_event_id,
       user_id,
@@ -284,7 +283,9 @@ async function importFeedbacks(
       created_at
     FROM feedback.user_feedback
     WHERE feature_event_id = ANY($1)
-  `, [featureEventIds]);
+  `,
+    [featureEventIds],
+  );
 
   const batch: {
     userEmail: string;
