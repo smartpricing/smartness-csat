@@ -37,8 +37,8 @@ export class InteractionUsersAnalyticsUsecase {
     if (cursor) {
       const decoded = this._decodeCursor(cursor);
       if (decoded) {
-        cursorCondition = `AND (ufi.created_at, ufi.id) < ($4, $5)`;
-        queryParams.push(decoded.created_at, decoded.id);
+        cursorCondition = `AND (ufi.updated_at, ufi.id) < ($4, $5)`;
+        queryParams.push(decoded.updated_at, decoded.id);
       }
     }
 
@@ -67,7 +67,7 @@ export class InteractionUsersAnalyticsUsecase {
        JOIN csat.product_feature pf ON pf.id = ufi.product_feature_id
        WHERE pf.product_key = $1 AND pf.key = $2
        ${cursorCondition}
-       ORDER BY ufi.created_at DESC, ufi.id DESC
+       ORDER BY ufi.updated_at DESC, ufi.id DESC
        LIMIT $3`,
       queryParams,
     );
@@ -78,7 +78,7 @@ export class InteractionUsersAnalyticsUsecase {
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem
-        ? this._encodeCursor(lastItem.created_at.toISOString(), lastItem.id)
+        ? this._encodeCursor(lastItem.updated_at.toISOString(), lastItem.id)
         : null;
 
     return {
@@ -99,14 +99,14 @@ export class InteractionUsersAnalyticsUsecase {
     };
   }
 
-  private _encodeCursor(createdAt: string, id: string): string {
-    return Buffer.from(JSON.stringify({ created_at: createdAt, id })).toString('base64');
+  private _encodeCursor(updatedAt: string, id: string): string {
+    return Buffer.from(JSON.stringify({ updated_at: updatedAt, id })).toString('base64');
   }
 
-  private _decodeCursor(cursor: string): { created_at: string; id: string } | null {
+  private _decodeCursor(cursor: string): { updated_at: string; id: string } | null {
     try {
       const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
-      if (decoded.created_at && decoded.id) {
+      if (decoded.updated_at && decoded.id) {
         return decoded;
       }
       return null;
