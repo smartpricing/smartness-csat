@@ -15,12 +15,12 @@ type TranslationResult = {
   comment_en: string | null;
 };
 
-type TranslateBatchResponse = {
-  translatedText: string[];
+type TranslateSingleResponse = {
+  translatedText: string;
   detectedLanguage?: {
     language: string;
     confidence: number;
-  }[];
+  };
 };
 
 export type ProcessFeedbacksResponse = {
@@ -45,7 +45,7 @@ export class ProcessFeedbacksUsecase {
   }
 
   /**
-   * Fetches a batch of PENDING feedbacks, translates them in a single API call,
+   * Fetches a batch of PENDING feedbacks, translates each comment individually,
    * then updates all in a single database query.
    */
   private async _processPendingToTranslated(): Promise<number> {
@@ -67,20 +67,15 @@ export class ProcessFeedbacksUsecase {
       translations.push({ id: feedback.id, comment_en: null });
     }
 
-    // Batch translate all comments in a single API call
-    if (withComments.length > 0) {
+    // Translate each comment individually so language detection is accurate per entry
+    for (const feedback of withComments) {
+      const comment = feedback.comment as string;
       try {
-        const comments = withComments.map((f) => f.comment as string);
-        const translatedComments = await this._batchTranslateComments(comments);
-
-        for (let i = 0; i < withComments.length; i++) {
-          const feedback = withComments[i]!;
-          const translatedText = translatedComments[i] ?? feedback.comment;
-          translations.push({ id: feedback.id, comment_en: translatedText });
-        }
+        const translatedText = await this._translateComment(comment);
+        translations.push({ id: feedback.id, comment_en: translatedText });
       } catch (error) {
-        logger.error({ msg: 'Batch translation failed', error });
-        return 0;
+        logger.error({ msg: 'Translation failed for feedback, keeping original', feedbackId: feedback.id, error });
+        translations.push({ id: feedback.id, comment_en: comment });
       }
     }
 
@@ -181,37 +176,24 @@ export class ProcessFeedbacksUsecase {
   }
 
   /**
-   * Batch translates comments to English using LibreTranslate API.
-   * If a comment is already in English, returns the original.
+   * Translates a single comment to English using LibreTranslate API.
+   * If the comment is already in English, returns the original.
    */
-  private async _batchTranslateComments(comments: string[]): Promise<string[]> {
-    const response = await this._apiGatewayClient.post<TranslateBatchResponse>(
+  private async _translateComment(comment: string): Promise<string> {
+    const response = await this._apiGatewayClient.post<TranslateSingleResponse>(
       '/api/translate/v1/translate',
       {
-        q: comments,
+        q: comment,
         source: 'auto',
         target: 'en',
       },
     );
 
-    const results: string[] = [];
-
-    for (let i = 0; i < comments.length; i++) {
-      const original = comments[i]!;
-      const translated = response.translatedText[i] ?? original;
-      const detectedLang = response.detectedLanguage?.[i]?.language;
-
-      // If already in English, keep original
-      if (detectedLang === 'en') {
-        results.push(original);
-      } else {
-        results.push(translated);
-      }
+    if (response.detectedLanguage?.language === 'en') {
+      return comment;
     }
 
-    logger.info({ msg: 'Batch translation completed', count: comments.length });
-
-    return results;
+    return response.translatedText;
   }
 
   /**
