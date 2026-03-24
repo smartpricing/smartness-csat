@@ -1,4 +1,3 @@
-import { subDays } from 'date-fns';
 import type { PostgresClient } from '../../clients/PostgresClient.js';
 import { NotFoundError } from '../../types/errors.js';
 
