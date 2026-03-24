@@ -2,6 +2,7 @@ import { subDays } from 'date-fns';
 import type { PostgresClient } from '../../clients/PostgresClient.js';
 import { NotFoundError } from '../../types/errors.js';
 import { getUserFirstLiveDate } from '../../utils/getUserFirstLiveDate.js';
+import { logger } from '../../utils/logger.js';
 
 type IncrementInteractionParams = {
   productKey: string;
@@ -44,6 +45,9 @@ export class IncrementInteractionUsecase {
     const meetsThreshold = row.interaction_count >= feature.interaction_threshold;
     const belowRejectionLimit = row.rejection_count < feature.rejection_threshold;
 
+    logger.info(
+      `For user ${params.userEmail}, product ${params.productKey}, feature ${params.featureKey}, lastFeedbackAt: ${lastFeedbackAt?.toISOString()}, hasRecentFeedback: ${hasRecentFeedback}, hasEnoughProductKnowledge: ${hasEnoughProductKnowledge}, shouldIncrementInteractionCount: ${shouldIncrementInteractionCount}, meetsThreshold: ${meetsThreshold}, belowRejectionLimit: ${belowRejectionLimit}`,
+    );
     return {
       user_email: row.user_email,
       interaction_count: row.interaction_count,
@@ -59,6 +63,7 @@ export class IncrementInteractionUsecase {
 
   private async _hasEnoughProductKnowledge(userEmail: string): Promise<boolean> {
     const firstLiveDateStr = await getUserFirstLiveDate(userEmail);
+    logger.info(`For user ${userEmail}, first live date: ${firstLiveDateStr}`);
 
     if (!firstLiveDateStr) {
       return false;
@@ -117,6 +122,9 @@ export class IncrementInteractionUsecase {
        FROM csat.user_feedback
        WHERE user_email = $1 AND product_feature_id = $2`,
       [userEmail, featureId],
+    );
+    logger.info(
+      `For user ${userEmail}, feature ${featureId}, last feedback date: ${result.rows[0]?.last_feedback_at?.toISOString()}`,
     );
     return result.rows[0]?.last_feedback_at ?? null;
   }

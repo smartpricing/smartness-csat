@@ -1,5 +1,6 @@
 import type { PostgresClient } from '../../clients/PostgresClient.js';
 import { NotFoundError } from '../../types/errors.js';
+import { logger } from '../../utils/logger.js';
 
 type SaveFeedbackParams = {
   productKey: string;
@@ -25,6 +26,10 @@ export class SaveFeedbackUsecase {
 
   async execute(params: SaveFeedbackParams): Promise<SaveFeedbackResponse> {
     const featureId = await this._resolveFeatureId(params.productKey, params.featureKey);
+
+    logger.info(
+      `For user ${params.userEmail}, product ${params.productKey}, feature ${params.featureKey}, inserting feedback with rating ${params.rating} and comment ${params.comment}`,
+    );
 
     const result = await this._postgresClient.client.query<{
       user_email: string;

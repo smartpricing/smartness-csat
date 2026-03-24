@@ -45,14 +45,7 @@ export class RejectFeatureUsecase {
       [params.userEmail, feature.id],
     );
 
-    const lastFeedbackAt = await this._getLastFeedbackDate(params.userEmail, feature.id);
     const row = result.rows[0]!;
-
-    const sixMonthsAgo = subDays(new Date(), 180);
-
-    const hasRecentFeedback = lastFeedbackAt && lastFeedbackAt > sixMonthsAgo;
-    const meetsThreshold = row.interaction_count >= feature.interaction_threshold;
-    const belowRejectionLimit = row.rejection_count < feature.rejection_threshold;
 
     return {
       user_email: row.user_email,
@@ -61,20 +54,10 @@ export class RejectFeatureUsecase {
       interaction_threshold: feature.interaction_threshold,
       rejection_count: row.rejection_count,
       rejection_threshold: feature.rejection_threshold,
-      should_request_feedback: meetsThreshold && belowRejectionLimit && !hasRecentFeedback,
+      should_request_feedback: false, // Rejecting the prompt should not trigger a new prompt
       created_at: row.created_at.toISOString(),
       updated_at: row.updated_at.toISOString(),
     };
-  }
-
-  private async _getLastFeedbackDate(userEmail: string, featureId: string): Promise<Date | null> {
-    const result = await this._postgresClient.client.query<{ last_feedback_at: Date }>(
-      `SELECT MAX(created_at) AS last_feedback_at
-       FROM csat.user_feedback
-       WHERE user_email = $1 AND product_feature_id = $2`,
-      [userEmail, featureId],
-    );
-    return result.rows[0]?.last_feedback_at ?? null;
   }
 
   private async _resolveFeature(
