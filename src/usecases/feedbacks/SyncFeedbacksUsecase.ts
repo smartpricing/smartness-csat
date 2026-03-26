@@ -85,7 +85,7 @@ export class SyncFeedbacksUsecase {
   }
 
   private async _syncToZapier(feedback: FeedbackRow): Promise<void> {
-    await axios.post(this._zapierWebhookUrl, {
+    const response = await axios.post(this._zapierWebhookUrl, {
       feedback_id: feedback.id,
       user_email: feedback.user_email,
       product_key: feedback.product_key,
@@ -99,7 +99,7 @@ export class SyncFeedbacksUsecase {
       created_at_date: feedback.created_at.toISOString().slice(0, 10),
     });
 
-    logger.debug({ msg: 'Feedback synced to Zapier', feedbackId: feedback.id });
+    logger.debug({ msg: 'Feedback synced to Zapier', feedbackId: feedback.id, response: response.data });
   }
 
   private async _batchUpdateToDone(ids: string[]): Promise<void> {
