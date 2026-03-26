@@ -18,6 +18,7 @@ spec:
         np.egress.postgres: 'true'
         np.ingress.api-gateway: 'true'
         np.egress.api-gateway: 'true'
+        np.egress.zapier: 'true'
       namespace: {{ .Release.Namespace }}
     spec:
       topologySpreadConstraints:
