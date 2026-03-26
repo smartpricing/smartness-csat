@@ -28,6 +28,9 @@ export function getConfig() {
     // API Gateway
     API_GATEWAY_URL = '',
     API_GATEWAY_AUTH = '',
+
+    // Zapier
+    ZAPIER_WEBHOOK_URL = '',
   } = process.env;
 
   return {
@@ -60,6 +63,10 @@ export function getConfig() {
     apiGateway: {
       baseUrl: API_GATEWAY_URL,
       token: API_GATEWAY_AUTH,
+    },
+
+    zapier: {
+      webhookUrl: ZAPIER_WEBHOOK_URL,
     },
   };
 }

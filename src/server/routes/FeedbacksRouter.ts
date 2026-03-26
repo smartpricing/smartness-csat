@@ -1,14 +1,16 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { PostgresClient } from '../../clients/PostgresClient.js';
-import { ProcessFeedbacksUsecase } from '../../usecases/feedbacks/ProcessFeedbacksUsecase.js';
 import { SaveFeedbackUsecase } from '../../usecases/feedbacks/SaveFeedbackUsecase.js';
+import { SyncFeedbacksUsecase } from '../../usecases/feedbacks/SyncFeedbacksUsecase.js';
+import { TranslateFeedbacksUsecase } from '../../usecases/feedbacks/TranslateFeedbacksUsecase.js';
 import { UpdateFeedbackNotesUsecase } from '../../usecases/feedbacks/UpdateFeedbackNotesUsecase.js';
 import {
-  ProcessFeedbacksResponseSchema,
   SaveFeedbackBodySchema,
   SaveFeedbackParamsSchema,
   SaveFeedbackResponseSchema,
+  SyncFeedbacksResponseSchema,
+  TranslateFeedbacksResponseSchema,
   UpdateFeedbackNotesBodySchema,
   UpdateFeedbackNotesParamsSchema,
   UpdateFeedbackNotesResponseSchema,
@@ -49,21 +51,44 @@ export async function getFeedbacksRouter(fastifyInstance: FastifyInstance) {
   );
 
   fastifyInstance.withTypeProvider<ZodTypeProvider>().post(
-    '/feedbacks/process',
+    '/feedbacks/translate',
     {
       schema: {
-        summary: 'Process pending feedbacks',
+        summary: 'Translate pending feedbacks',
         description:
-          'Processes all pending feedbacks through the state machine: PENDING → TRANSLATED → DONE. This endpoint is designed to be called by a Kubernetes CronJob.',
+          'Translates a batch of PENDING feedbacks to English using LibreTranslate and advances them to TRANSLATED state. Designed to be called by a Kubernetes CronJob.',
         tags: ['feedbacks'],
         response: {
-          200: ProcessFeedbacksResponseSchema,
+          200: TranslateFeedbacksResponseSchema,
         },
       },
     },
     async (_request, reply) => {
       const postgresClient = PostgresClient.getInstance();
-      const usecase = new ProcessFeedbacksUsecase(postgresClient);
+      const usecase = new TranslateFeedbacksUsecase(postgresClient);
+
+      const result = await usecase.execute();
+
+      return reply.code(200).send(result);
+    },
+  );
+
+  fastifyInstance.withTypeProvider<ZodTypeProvider>().post(
+    '/feedbacks/sync',
+    {
+      schema: {
+        summary: 'Sync translated feedbacks to Zapier',
+        description:
+          'Syncs a batch of TRANSLATED feedbacks to the configured Zapier webhook and advances them to DONE state. Designed to be called by a Kubernetes CronJob.',
+        tags: ['feedbacks'],
+        response: {
+          200: SyncFeedbacksResponseSchema,
+        },
+      },
+    },
+    async (_request, reply) => {
+      const postgresClient = PostgresClient.getInstance();
+      const usecase = new SyncFeedbacksUsecase(postgresClient);
 
       const result = await usecase.execute();
 

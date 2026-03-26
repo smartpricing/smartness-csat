@@ -22,9 +22,12 @@ export const SaveFeedbackResponseSchema = z.object({
   created_at: z.string().describe('Created at'),
 });
 
-export const ProcessFeedbacksResponseSchema = z.object({
+export const TranslateFeedbacksResponseSchema = z.object({
   translated_count: z.number().describe('Number of feedbacks translated in this run'),
-  done_count: z.number().describe('Number of feedbacks synced and marked as done in this run'),
+});
+
+export const SyncFeedbacksResponseSchema = z.object({
+  done_count: z.number().describe('Number of feedbacks synced to Zapier and marked as done in this run'),
 });
 
 export const UpdateFeedbackNotesParamsSchema = z.object({

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-process-feedbacks
+  name: {{ .Release.Name }}-process-pending-feedbacks
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
@@ -12,13 +12,13 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      backoffLimit: 3
+      backoffLimit: 0
       template:
         metadata:
           labels:
-            app: {{ .Release.Name }}-process-feedbacks
+            app: {{ .Release.Name }}-process-pending-feedbacks
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           containers:
             - name: curl
               image: curlimages/curl:8.5.0
@@ -28,5 +28,38 @@ spec:
                 - POST
                 - -f
                 - --max-time
-                - "120"
-                - http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc:{{ .Values.port }}/api/csat/v1/feedbacks/process
+                - "540"
+                - http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc:{{ .Values.port }}/api/csat/v1/feedbacks/translate
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-process-translated-feedbacks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: {{ .Release.Name }}-process-translated-feedbacks
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.5.0
+              command:
+                - curl
+                - -X
+                - POST
+                - -f
+                - --max-time
+                - "540"
+                - http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc:{{ .Values.port }}/api/csat/v1/feedbacks/sync

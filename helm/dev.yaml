@@ -5,7 +5,7 @@ resources:
     memory: 400Mi
   requests:
     memory: 400Mi
-    cpu: 100m
+    cpu: 200m
 envVars:
   - name: OTEL_SDK_DISABLED
     value: "false"
@@ -15,4 +15,6 @@ envVars:
     value: "1"
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
     value: "http://grafana-k8s-monitoring-alloy-receiver.grafana.svc.cluster.local:4318"
+  - name: ZAPIER_WEBHOOK_URL
+    value: "https://hooks.zapier.com/hooks/catch/22112050/unut5w4/"
 port: 3018

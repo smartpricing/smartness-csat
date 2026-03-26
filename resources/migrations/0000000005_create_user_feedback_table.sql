@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS csat.user_feedback (
     notes_updated_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     translated_at TIMESTAMP
+    synced_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_feedback_user_email_product_feature_id
