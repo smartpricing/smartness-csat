@@ -105,8 +105,8 @@ export class SyncFeedbacksUsecase {
   private async _batchUpdateToDone(ids: string[]): Promise<void> {
     await this._postgresClient.client.query(
       `UPDATE csat.user_feedback
-       SET state = 'DONE'
-       synced_at = NOW()
+       SET state = 'DONE',
+           synced_at = NOW()
        WHERE id = ANY($1::uuid[])`,
       [ids],
     );
